@@ -1,49 +1,42 @@
-# <img height="64" src="https://github.com/DavyCraft648/ItemLifeTime/blob/main/icon.png" width="64"/> ItemLifeTime
-Adjust the time of dropped items to disappear in your server
+# <img src="https://github.com/DavyCraft648/ItemLifeTime/blob/main/icon.png" width="64" height="64" alt="ItemLifeTime Icon"/> ItemLifeTime
 
-## How does this plugin work?
-Default time of dropped items to disappear in PocketMine is 5 minutes (300 seconds),
-but you can change it with this plugin!
+[![PMMP Version](https://img.shields.io/badge/PMMP-5.x-blue)](https://pmmp.io)
+[![License](https://img.shields.io/github/license/DavyCraft648/ItemLifeTime)](LICENSE)
 
-## How to use?
-- `item-lifetime` in config.yml is used to change dropped items' time to disappear in your whole server.
+Customize dropped item despawn times across your PocketMine-MP server with granular world-specific control.
 
+## Features
 
-- Use `worlds` in the config if you want a separated item lifetime on each world in your server,
-  Example:
-  ```yaml
-  worlds:
-    MyPrettyWorld: 120 # Set item lifetime on MyPrettyWorld world to 120 second
-    MyDirtyWorld: 360 # Set item lifetime on MyDirtyWorld world to 360 second
-  ```
+- ⏱️ Set global default item despawn time
+- 🌍 Configure world-specific despawn durations
+- 🔍 Optional visual countdown display
+- ⚡ Lightweight and efficient
+- 🔄 Automatic configuration management
 
-## Config
+## Installation
+
+1. Download the latest phar from [Releases](https://github.com/xDqZtop/ItemLifeTime/releases)
+2. Place the phar in your server's `plugins/` folder
+3. Restart your server
+4. Configure to your needs (see below)
+
+## Configuration
+
+After first run, edit `plugins/ItemLifeTime/config.yml`:
+
 ```yaml
---- # ItemLifeTime plugin configuration file
-
-# Set dropped item lifetime in your server (in second)
-# Default is 300 seconds (5 minutes)
-# Minimum value is 0, maximum is 1938
-# Item will never despawn if this set to -1
+# Global default despawn time (seconds)
+# - Range: 0-1938 (≈32 minutes)
+# - -1 = Never despawn
 item-lifetime: 300
 
-# Set different custom item lifetime on each of these worlds (optional)
-# Value in item-lifetime will be used if the world is not set in this list
-# Example configuration:
-# worlds:
-#   MyPrettyWorld: 120
-#   MyDirtyWorld: 360
-#
-# This will set item lifetime in MyPrettyWorld world to 120 seconds, 360 seconds in MyDirtyWorld
-worlds: {}
+# World-specific overrides
+worlds:
+  lobby: -1      # Items never despawn in lobby
+  pvp_arena: 60  # Quick 1-minute despawn in PvP
+  mining: 600    # 10 minutes in mining world
 
-# Show remaining time to disappear in item's nametag
+# Visual countdown display
 display-time:
-  enabled: false
-  # Text to be set in item's nametag
-  # {MINUTE}, {SECOND}, {TIME}
-  # Set this to "{MINUTE}:{SECOND} {TIME}" will be shown as "01:20 01 minute" (example)
-  text: "{MINUTE}:{SECOND}"
-...
-
-```
+  enabled: true  # Show remaining time
+  text: "{TIME} remaining"  # Display format

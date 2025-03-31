@@ -2,17 +2,21 @@
 
 namespace DavyCraft648\ItemLifeTime;
 
+use JsonException;
 use pocketmine\entity\object\ItemEntity;
 use pocketmine\event\entity\ItemDespawnEvent;
 use pocketmine\event\entity\ItemSpawnEvent;
 use pocketmine\event\EventPriority;
+use pocketmine\plugin\PluginBase;
 use pocketmine\scheduler\ClosureTask;
+use ReflectionException;
+use UnhandledMatchError;
 use function explode;
 use function floor;
 use function gmdate;
 use function str_replace;
 
-final class Main extends \pocketmine\plugin\PluginBase {
+final class Main extends PluginBase {
 
     private int $defaultDespawnDelay = 60 * 5; // default = 5 minutes
     private array $customWorlds = [];
@@ -21,6 +25,9 @@ final class Main extends \pocketmine\plugin\PluginBase {
     /** @var ItemEntity[] */
     private array $itemToUpdate = [];
 
+    /**
+     * @throws ReflectionException|JsonException
+     */
     protected function onEnable(): void {
         $this->saveDefaultConfig();
         $this->checkConfig();
@@ -28,26 +35,18 @@ final class Main extends \pocketmine\plugin\PluginBase {
         $plmanager = $this->getServer()->getPluginManager();
         $plmanager->registerEvent(ItemSpawnEvent::class, function(ItemSpawnEvent $event): void {
             $entity = $event->getEntity();
-            if (!($entity instanceof ItemEntity)) {
-                return;
-            }
-
-            $age = $entity->getDespawnDelay();
             $delay = $this->customWorlds[$entity->getWorld()->getFolderName()] ?? $this->defaultDespawnDelay;
             $delay = $delay === -1 ? -1 : $delay * 20;
-            if ($age > $delay) {
-                $entity->setDespawnDelay($delay);
-            }
+
+            $entity->setDespawnDelay($delay);
+
             if ($this->displayTime && $delay !== -1) {
                 $this->itemToUpdate[$entity->getId()] = $entity;
             }
         }, EventPriority::LOW, $this);
+
         $plmanager->registerEvent(ItemDespawnEvent::class, function(ItemDespawnEvent $event): void {
             $entity = $event->getEntity();
-            if (!($entity instanceof ItemEntity)) {
-                return;
-            }
-
             $delay = $this->customWorlds[$entity->getWorld()->getFolderName()] ?? $this->defaultDespawnDelay;
             if ($delay === -1) {
                 $event->cancel();
@@ -55,9 +54,9 @@ final class Main extends \pocketmine\plugin\PluginBase {
         }, EventPriority::LOW, $this);
 
         if ($this->displayTime) {
-            $this->getScheduler()->scheduleDelayedRepeatingTask(new ClosureTask(function(): void {
+            $this->getScheduler()->scheduleRepeatingTask(new ClosureTask(function(): void {
                 foreach ($this->itemToUpdate as $id => $item) {
-                    if ($item->isClosed()) {
+                    if ($item->isClosed() || $item->isFlaggedForDespawn()) {
                         unset($this->itemToUpdate[$id]);
                         continue;
                     }
@@ -77,15 +76,18 @@ final class Main extends \pocketmine\plugin\PluginBase {
                             }],
                             $this->displayText
                         ));
-                    } catch (\UnhandledMatchError) {
+                    } catch (UnhandledMatchError) {
                     }
-                    $item->setNameTagVisible(true);
-                    $item->setNameTagAlwaysVisible(true);
+                    $item->setNameTagVisible();
+                    $item->setNameTagAlwaysVisible();
                 }
-            }), 20, 10);
+            }), 10);
         }
     }
 
+    /**
+     * @throws JsonException
+     */
     private function checkConfig(): void {
         $config = $this->getConfig();
         $config->setDefaults([
@@ -131,5 +133,4 @@ final class Main extends \pocketmine\plugin\PluginBase {
     public function isValidDespawnDelay(int $despawnDelay): bool {
         return !((($despawnDelay * 20) < 0 || ($despawnDelay * 20) > ItemEntity::MAX_DESPAWN_DELAY) && $despawnDelay !== ItemEntity::NEVER_DESPAWN);
     }
-
 }
